@@ -1,10 +1,11 @@
 FC = uhcaf
+CC = uhcc
 #FC = ftn
 LD = $(FC)
-FFLAGS = --mpi
+FFLAGS =
 LDFLAGS = $(FFLAGS)
 
-caf_tests: caf_tests.o
+caf_tests: caf_tests.o wtime.o
 	$(LD) $(LDFLAGS) -o  $@ $^
 
 caf_tests.o: caf_tests.F90
