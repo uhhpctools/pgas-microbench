@@ -1317,37 +1317,37 @@ program main
     call run_getget_latency_test(BARRIER)
     call run_getget_latency_test(P2P)
 
-!    call run_put_bw_test()
-!    call run_get_bw_test()
-!    call run_put_bw_bidir_test()
-!    call run_get_bw_bidir_test()
-!    call run_rand_put_bw_test()
-!    call run_rand_get_bw_test()
-!
-!    call run_strided_put_bw_test(TARGET_STRIDED)
-!    call run_strided_put_bw_test(ORIGIN_STRIDED)
-!    call run_strided_put_bw_test(BOTH_STRIDED)
-!
-!    call run_strided_get_bw_test(TARGET_STRIDED)
-!    call run_strided_get_bw_test(ORIGIN_STRIDED)
-!    call run_strided_get_bw_test(BOTH_STRIDED)
-!
-!    call run_strided_put_bidir_bw_test(TARGET_STRIDED)
-!    call run_strided_put_bidir_bw_test(ORIGIN_STRIDED)
-!    call run_strided_put_bidir_bw_test(BOTH_STRIDED)
-!
-!    call run_strided_get_bidir_bw_test(TARGET_STRIDED)
-!    call run_strided_get_bidir_bw_test(ORIGIN_STRIDED)
-!    call run_strided_get_bidir_bw_test(BOTH_STRIDED)
-!
-!    call run_rand_strided_put_bw_test(TARGET_STRIDED)
-!    call run_rand_strided_put_bw_test(ORIGIN_STRIDED)
-!    call run_rand_strided_put_bw_test(BOTH_STRIDED)
-!
-!    call run_rand_strided_get_bw_test(TARGET_STRIDED)
-!    call run_rand_strided_get_bw_test(ORIGIN_STRIDED)
-!    call run_rand_strided_get_bw_test(BOTH_STRIDED)
-!
-!    call run_reduce_test(.false.)
+    call run_put_bw_test()
+    call run_get_bw_test()
+    call run_put_bw_bidir_test()
+    call run_get_bw_bidir_test()
+    call run_rand_put_bw_test()
+    call run_rand_get_bw_test()
+
+    call run_strided_put_bw_test(TARGET_STRIDED)
+    call run_strided_put_bw_test(ORIGIN_STRIDED)
+    call run_strided_put_bw_test(BOTH_STRIDED)
+
+    call run_strided_get_bw_test(TARGET_STRIDED)
+    call run_strided_get_bw_test(ORIGIN_STRIDED)
+    call run_strided_get_bw_test(BOTH_STRIDED)
+
+    call run_strided_put_bidir_bw_test(TARGET_STRIDED)
+    call run_strided_put_bidir_bw_test(ORIGIN_STRIDED)
+    call run_strided_put_bidir_bw_test(BOTH_STRIDED)
+
+    call run_strided_get_bidir_bw_test(TARGET_STRIDED)
+    call run_strided_get_bidir_bw_test(ORIGIN_STRIDED)
+    call run_strided_get_bidir_bw_test(BOTH_STRIDED)
+
+    call run_rand_strided_put_bw_test(TARGET_STRIDED)
+    call run_rand_strided_put_bw_test(ORIGIN_STRIDED)
+    call run_rand_strided_put_bw_test(BOTH_STRIDED)
+
+    call run_rand_strided_get_bw_test(TARGET_STRIDED)
+    call run_rand_strided_get_bw_test(ORIGIN_STRIDED)
+    call run_rand_strided_get_bw_test(BOTH_STRIDED)
+
+    call run_reduce_test(.false.)
     call run_reduce_test(.true.)
 end program
