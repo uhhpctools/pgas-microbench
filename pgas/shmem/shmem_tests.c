@@ -148,6 +148,8 @@ int main(int argc, char **argv)
 
     run_reduce_test(0);
     run_reduce_test(1);
+
+    return 0;
 }
 
 #ifdef _DEBUG
