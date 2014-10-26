@@ -1,0 +1,228 @@
+!
+! Microbenchmarks for CAF
+!
+! (C) HPCTools Group, University of Houston
+!
+module caf_teams_microbenchmarks
+  implicit none
+  interface
+     function my_time()
+       double precision :: my_time
+     end function my_time
+  end interface
+  integer :: tid
+  integer :: color, key, ierr
+
+  integer, parameter :: SYNC_NITER = 1000
+  integer, parameter :: BUFFER_SIZE = 1!1024 *1024
+  integer, parameter :: RED_NITER = 10000
+  integer, parameter :: NITER = 1000
+  integer, parameter :: N=1024
+  integer, parameter :: NUM_TIME_G = 32
+
+  integer :: send_buffer(BUFFER_SIZE)[*]
+  integer :: recv_buffer(BUFFER_SIZE)[*]
+  integer :: A(N)[*]
+  double precision, allocatable :: time(:)[*]
+
+  team :: tm
+  double precision :: t1, t2
+
+  integer :: me, i, j
+
+contains
+
+
+  function MY_WTIME()
+    double precision :: MY_WTIME
+    double precision :: t
+
+    call wtime(t)
+
+    MY_WTIME = t
+  end function MY_WTIME
+
+!***********************sync all*****************************
+
+  subroutine sync_team(nteams)
+    integer :: nteams
+    me = team_rank()
+    if(nteams .eq. 1) then
+       tid = 1
+    else
+       tid = mod(team_rank(), 2)
+    end if
+    color = 1
+    key = team_rank(team_world)
+    call team_split(team_world, tid, key, tm, tid,ierr)
+    if(me == 0)       print *, "------------barrier------------"   
+
+    with team tm
+    t1 = MY_WTIME()   
+    do i = 1, SYNC_NITER
+      call team_barrier(tm)
+    end do
+    t2 = MY_WTIME()
+    time(1) = 1000000*(t2-t1)/(SYNC_NITER)
+
+    if (team_rank(tm) == 0) then
+       do i = 1, team_size(tm)-1
+          time(1) = time(1) + time(1)[i]
+       end do
+       print *, "CAF2.0 Time for sync_team:",  time(1)/team_size(tm),"us ", " for number of iterations:", SYNC_NITER
+    end if
+    end with team
+    if(me == 0)       print *, "number of images per team for sync team is: ", team_size()/nteams
+  end subroutine sync_all_team
+
+
+!*************************reduction************************
+  subroutine REDUCE_SUM_INT(in1, in2, iout, nbytes)
+    implicit none
+    integer :: in1, in2, iout
+    integer :: nbytes
+    iout = (in1 + in2)
+  end subroutine REDUCE_SUM_INT
+
+  subroutine co_sum_team(nteams)
+    implicit none
+    double precision :: t1, t2
+    integer ::  ni, nrep
+    integer :: num_time
+    integer :: blksize
+    integer :: nteams
+    me = team_rank()
+    if(nteams .eq. 1) then
+       tid = 1
+    else
+       tid = mod(team_rank(), 2)
+    end if
+    color = 1
+    key = team_rank(team_world)
+    call team_split(team_world, tid, key, tm, tid,ierr)
+    if(me == 0)       print *, "------------reduction------------"
+
+    with team tm
+    num_time = 1
+    blksize = 1
+    do while (blksize <= BUFFER_SIZE)
+       send_buffer(1:blksize) = 42
+       nrep = RED_NITER
+
+       t1 = MY_WTIME()
+       do i = 1, nrep
+          do j =1, blksize  !reduction on array is not working correctly
+             call team_allreduce(send_buffer(j), recv_buffer(j), REDUCE_SUM_INT, tm)
+          enddo
+          if (any(recv_buffer(1:blksize) /= 42*team_size(tm))) then
+             write (*, '("subteam recv buffer wrong value is:",I20)') &
+                  recv_buffer(1)
+             stop "got wrong value"
+          end if
+       end do
+       t2 = MY_WTIME()
+
+       time(num_time) = 1000000*(t2-t1)/(RED_NITER)
+       if (team_rank() == 0) then
+          do i = 1, team_size() - 1
+             time(num_time) = time(num_time) + &
+                  time(num_time)[i]
+          end do
+          print *, "CAF2.0 Time for reduction sum within team:", time(num_time)/team_size(tm), "us ", " for data size:", blksize, " and number of iterations:", nrep
+       end if
+
+       num_time = num_time + 1
+       blksize = blksize * 2
+    end do
+    end with team
+    if(me == 0)       print *, "number of images per team for reduce team is: ", team_size()/nteams
+  end subroutine co_sum_team
+
+!**********************************broadcast **********************************
+  subroutine broadcast_team(nteams)
+    integer :: nteams
+    me = team_rank()
+    if(nteams .eq. 1) then
+       tid = 1
+    else
+       tid = mod(team_rank(), 2)
+    end if
+
+    color = 1
+    key = team_rank(team_world)
+    call team_split(team_world, tid, key, tm, tid,ierr)
+    if(me == 0)       print *, "------------broadcast------------"
+
+    with team tm
+
+    t1 = MY_WTIME()
+    do i = 1, SYNC_NITER
+       A(:) = team_rank(tm)
+       call team_broadcast(A,0, tm)
+       if (any(A(1:N) /= 0)) then
+          stop "got wrong value"
+       end if
+    end do
+    t2 = MY_WTIME()
+    time(1) = 1000000*(t2-t1)/(SYNC_NITER)
+
+    if (team_rank() == 0) then
+       do i = 1, team_size()-1
+          time(1) = time(1) + time(1)[i]
+       end do
+
+       print *, "CAF2.0 Time for broadcast team:",  time(1)/team_size(tm),"us", " for number of iterations:", SYNC_NITER
+   end if
+   end with team
+   call team_barrier()
+   if(me == 0)       print *, "number of images per team for broadcast is: ", team_size()/nteams
+ end subroutine broadcast_team
+
+!**************************** FORM TEAM ***********************************
+  subroutine form_team_overhead
+    me = team_rank()
+    tid = 1
+    if(me == 0)       print *, "------------form team------------"
+
+    ! everyone is going into the same subteam
+    color = 1
+    key = team_rank(team_world)
+    t1 = MY_WTIME()
+    do i = 1, NITER
+       call team_split(team_world, tid, key, tm, tid,ierr)
+    enddo
+    t2 = MY_WTIME()
+    time(1) = 1000000*(t2-t1)/(NITER)
+
+    call team_barrier()
+
+    if (me == 0) then
+       do i = 1, team_size()-1
+          time(1) = time(1) + time(1)[i]
+       end do
+       print *, "CAF2.0 Time for form team overhead:",  time(1)/team_size(),"us", " for number of iterations:", NITER
+    end if
+    with team tm
+      call team_barrier(tm)
+    end with team
+  end subroutine form_team_overhead
+end module caf_teams_microbenchmarks
+
+!****************************************main program********************************
+
+program main
+  use caf_teams_microbenchmarks
+
+  implicit none
+  allocate (time(NUM_TIME_G)[] )
+  if(team_rank() == 0)       print *, "------------begin Rice CAF2.0------------"
+  call sync_team(1)
+  call co_sum_team(1)
+  call broadcast_team(1)
+  call sync_team(2)
+  call co_sum_team(2)
+  call broadcast_team(2)
+  call form_team_overhead()
+  if(team_rank() == 0)       print *, "------------end Rice CAF2.0------------"
+end program main
+

@@ -1,0 +1,17 @@
+====================================================
+TEAMS Microbenchmark Suite
+====================================================
+HPCTools Group
+University of Houston
+Last Modified: Oct 25, 2014
+====================================================
+
+Teams Microbenchmarks is a new suite we specifically developed for
+a research work that studies how the memory hierarchy can be exploited to
+optimize teams implementation in CAF programs. This newly developed Coarray Fortran, CAF2.0 and MPI Teams Microbenchmarks suite contains a set of microbenchmarks for
+testing reductions, broadcasts and barriers within teams. Also, we estimate the overhead of the creation of a new team. 
+
+====================================================
+Contact and Support
+
+Dounia Khaldi     khaldi.dounia@gmail.com
